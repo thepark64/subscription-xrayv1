@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Subscription X-Ray — see what's quietly leaving your account</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,600;8..60,700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#F6F5F1; --paper-raised:#FFFFFF; --ink:#1B1F23; --accent:#233247; --accent-soft:#3E5878;
+    --teal:#2C6E62; --teal-soft:#E9F1EE; --warn:#B5442E; --warn-soft:#F7E8E3; --line:#DEDAD0; --muted:#686C70;
+    --shadow: 0 1px 2px rgba(27,31,35,0.04), 0 8px 24px rgba(27,31,35,0.06);
+  }
+  @keyframes riseIn{ from{opacity:0; transform:translateY(10px);} to{opacity:1; transform:translateY(0);} }
+  .hero > *{animation: riseIn 0.6s cubic-bezier(.2,.7,.3,1) both;}
+  .hero-card{animation-delay:0.12s;}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){ --paper:#14161A; --paper-raised:#1B1E23; --ink:#EBE9E3; --line:#2C2F34; --muted:#9A9C9F; }
+  }
+  :root[data-theme="dark"]{ --paper:#14161A; --paper-raised:#1B1E23; --ink:#EBE9E3; --line:#2C2F34; --muted:#9A9C9F; }
+  *{box-sizing:border-box;}
+  html,body{height:100%;}
+  html{scroll-padding-top:env(safe-area-inset-top,0px);}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'IBM Plex Sans',system-ui,sans-serif;line-height:1.55;
+       padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);}
+  .wrap{max-width:920px;margin:0 auto;padding:0 24px;}
+  a{color:inherit;}
+
+  nav{border-bottom:1px solid var(--line);}
+  .navrow{display:flex;justify-content:space-between;align-items:center;padding:18px 0;}
+  .brand{font-family:'IBM Plex Mono',monospace;font-size:14px;letter-spacing:0.01em;}
+  .navlinks a{font-size:14px;color:var(--muted);text-decoration:none;margin-left:24px;}
+  .navlinks a:hover{color:var(--ink);}
+
+  .hero{padding:64px 0 56px;display:grid;grid-template-columns:1.1fr 0.9fr;gap:48px;align-items:center;}
+  @media (max-width:760px){ .hero{grid-template-columns:1fr;padding:44px 0 40px;gap:36px;} }
+  h1{font-family:'Source Serif 4',serif;font-weight:600;font-size:clamp(30px,4.2vw,44px);line-height:1.14;margin:0 0 18px;}
+  .hero p.lede{color:var(--muted);font-size:16.5px;max-width:44ch;margin:0 0 28px;}
+  .cta-row{display:flex;gap:12px;flex-wrap:wrap;}
+  .btn{display:inline-block;padding:13px 24px;font-size:14.5px;font-family:'IBM Plex Sans',sans-serif;font-weight:500;
+       text-decoration:none;cursor:pointer;border:1px solid transparent;border-radius:2px;transition:background 0.15s ease, border-color 0.15s ease, transform 0.1s ease;}
+  .btn-primary{background:var(--accent);color:var(--paper-raised);}
+  .btn-primary:hover{background:var(--accent-soft);transform:translateY(-1px);}
+  .btn-ghost{border-color:var(--line);color:var(--ink);background:none;}
+  .btn-ghost:hover{border-color:var(--accent);background:rgba(35,50,71,0.03);}
+  .btn:focus-visible{outline:2px solid var(--teal);outline-offset:2px;}
+  .trust{margin-top:16px;font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--teal);display:flex;align-items:center;gap:7px;}
+  .trust::before{content:'';width:6px;height:6px;border-radius:50%;background:var(--teal);display:inline-block;}
+
+  .hero-card{background:var(--paper-raised);border:1px solid var(--line);padding:24px;box-shadow:var(--shadow);border-radius:2px;}
+  .hero-card .statline{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:16px;margin-bottom:14px;}
+  .hero-card .figure{font-family:'IBM Plex Mono',monospace;font-size:42px;line-height:1;color:var(--accent);}
+  .hero-card .figure small{font-size:13px;color:var(--muted);display:block;margin-top:7px;font-family:'IBM Plex Sans',sans-serif;font-weight:400;}
+  .row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px dashed var(--line);font-size:14px;}
+  .row:last-child{border-bottom:none;}
+  .row .merchname{display:flex;align-items:center;gap:9px;}
+  .row .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);flex-shrink:0;}
+  .row.flagged .dot{background:var(--warn);}
+  .row .tag{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--warn);background:var(--warn-soft);padding:2px 6px;margin-left:8px;border-radius:2px;}
+  .row .amt{font-family:'IBM Plex Mono',monospace;}
+
+  section{padding:52px 0;border-top:1px solid var(--line);}
+  .eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--teal);margin:0 0 10px;}
+  h2{font-family:'Source Serif 4',serif;font-weight:600;font-size:26px;margin:0 0 8px;max-width:20ch;}
+  section > p.lede{color:var(--muted);font-size:15px;max-width:52ch;margin:0 0 32px;}
+
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);}
+  @media (max-width:700px){ .steps{grid-template-columns:1fr;} }
+  .step{background:var(--paper-raised);padding:24px;transition:background 0.15s ease;}
+  .step:hover{background:#FAFAF8;}
+  .step .n{font-family:'IBM Plex Mono',monospace;color:var(--teal);font-size:13px;margin-bottom:12px;
+       width:26px;height:26px;border:1px solid var(--teal);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .step h3{font-size:16px;margin:0 0 8px;font-weight:600;}
+  .step p{font-size:14px;color:var(--muted);margin:0;}
+
+  .pricing{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  @media (max-width:700px){ .pricing{grid-template-columns:1fr;} }
+  .plan{border:1px solid var(--line);padding:28px;background:var(--paper-raised);border-radius:2px;}
+  .plan.featured{border-color:var(--accent);position:relative;box-shadow:var(--shadow);}
+  .plan.featured::before{content:'Most popular';position:absolute;top:-11px;left:28px;background:var(--accent);color:var(--paper-raised);
+       font-family:'IBM Plex Mono',monospace;font-size:10.5px;padding:3px 9px;border-radius:2px;letter-spacing:0.02em;}
+  .plan .name{font-weight:600;font-size:15px;margin-bottom:6px;color:var(--muted);text-transform:none;}
+  .plan .price{font-family:'IBM Plex Mono',monospace;font-size:32px;margin:6px 0 4px;color:var(--ink);}
+  .plan .price span{font-size:13px;color:var(--muted);font-family:'IBM Plex Sans',sans-serif;}
+  .plan ul{list-style:none;padding:0;margin:20px 0 24px;font-size:14px;color:var(--muted);}
+  .plan li{padding:7px 0;border-bottom:1px solid var(--line);}
+  .plan li:last-child{border-bottom:none;}
+  .plan li::before{content:'—  ';color:var(--teal);}
+  #razorpay-mount form{margin:0;}
+  #pro-status{font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--teal);margin-top:12px;display:none;}
+  #pro-status.show{display:block;}
+
+  .faq{border-top:1px solid var(--line);}
+  .faq-item{padding:18px 0;border-bottom:1px solid var(--line);}
+  .faq-item h3{font-size:15px;font-weight:600;margin:0 0 6px;}
+  .faq-item p{font-size:14px;color:var(--muted);margin:0;max-width:60ch;}
+
+  footer{padding:32px 24px;font-size:13px;color:var(--muted);text-align:center;}
+</style>
+</head>
+<body>
+<nav><div class="wrap navrow">
+  <div class="brand">subscription x-ray</div>
+  <div class="navlinks"><a href="#how">How it works</a><a href="#pricing">Pricing</a><a href="#faq">FAQ</a></div>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <div>
+      <h1>See what's quietly leaving your account every month.</h1>
+      <p class="lede">Upload a bank or card statement. Subscription X-Ray finds every recurring charge — the ones you remember and the ones you forgot — in seconds, entirely in your browser.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="https://claude.ai/artifact/V8uiQNdtezB2fHNobjk6zD" target="_blank" rel="noopener">Scan my statement — free</a>
+        <a class="btn btn-ghost" href="#pricing">See pricing</a>
+      </div>
+      <div class="trust">Your statement is never uploaded to a server — it's read locally, in your browser.</div>
+    </div>
+    <div class="hero-card">
+      <div class="statline">
+        <div class="figure">₹3,847<small>found leaving your account monthly</small></div>
+      </div>
+      <div class="row"><span class="merchname"><span class="dot"></span>Netflix</span><span class="amt">₹649/mo</span></div>
+      <div class="row"><span class="merchname"><span class="dot"></span>Cult.fit</span><span class="amt">₹999/mo</span></div>
+      <div class="row flagged"><span class="merchname"><span class="dot"></span>Unnamed SaaS tool<span class="tag">unrecognised</span></span><span class="amt">₹1,999/mo</span></div>
+      <div class="row"><span class="merchname"><span class="dot"></span>Spotify</span><span class="amt">₹119/mo</span></div>
+      <div class="row"><span class="merchname"><span class="dot"></span>Google One</span><span class="amt">₹130/mo</span></div>
+    </div>
+  </div>
+</div>
+
+<section id="how"><div class="wrap">
+  <p class="eyebrow">How it works</p>
+  <h2>Three steps, no account required</h2>
+  <div class="steps">
+    <div class="step"><div class="n">01</div><h3>Export your statement</h3><p>Download a CSV from your bank or card app — most banks and UPI apps offer this under Statements.</p></div>
+    <div class="step"><div class="n">02</div><h3>Drop it in</h3><p>The file is parsed locally in your browser. It's never sent anywhere, so there's nothing to trust us with.</p></div>
+    <div class="step"><div class="n">03</div><h3>See what's recurring</h3><p>Every repeating charge is listed with amount, frequency, and a direct link to manage or cancel it.</p></div>
+  </div>
+</div></section>
+
+<section id="pricing"><div class="wrap">
+  <p class="eyebrow">Pricing</p>
+  <h2>Free to see it. Pay for peace of mind.</h2>
+  <p class="lede">The scan itself is free, always. Pro adds ongoing monitoring so a new subscription never sits unnoticed for months again.</p>
+  <div class="pricing">
+    <div class="plan">
+      <div class="name">Free</div>
+      <div class="price">₹0</div>
+      <ul>
+        <li>Unlimited one-off scans</li>
+        <li>Full recurring-charge detection</li>
+        <li>Cancellation links for known services</li>
+      </ul>
+      <a class="btn btn-ghost" href="https://claude.ai/artifact/V8uiQNdtezB2fHNobjk6zD" target="_blank" rel="noopener" style="width:100%;text-align:center;">Start free</a>
+    </div>
+    <div class="plan featured">
+      <div class="name">Pro</div>
+      <div class="price">₹99<span> / month</span></div>
+      <ul>
+        <li>Everything in Free</li>
+        <li>Monthly re-check reminders</li>
+        <li>Alerts the moment a new subscription appears</li>
+        <li>Full history saved across statements</li>
+      </ul>
+      <div id="razorpay-mount">
+        <!--
+          Real payment button goes here once deployed on your own domain
+          (see the setup notes in chat — this exact script tag is blocked
+          inside Claude's artifact sandbox, but works once self-hosted):
+
+          <form>
+            <script src="https://checkout.razorpay.com/v1/payment-button.js"
+                    data-payment_button_id="YOUR_BUTTON_ID_HERE" async></script>
+          </form>
+        -->
+        <a class="btn btn-primary" href="#pricing" style="width:100%;text-align:center;">Upgrade to Pro</a>
+      </div>
+      <div id="pro-status"></div>
+    </div>
+  </div>
+</div></section>
+
+<section id="faq"><div class="wrap">
+  <p class="eyebrow">FAQ</p>
+  <h2>Common questions</h2>
+  <div class="faq">
+    <div class="faq-item"><h3>Is my statement actually private?</h3><p>Yes — parsing happens with JavaScript running in your own browser. The file never leaves your device or touches a server.</p></div>
+    <div class="faq-item"><h3>Which banks does it support?</h3><p>Any CSV export with a date, description, and amount column — this covers most Indian banks and UPI apps including PhonePe, GPay, SBI, HDFC, and ICICI.</p></div>
+    <div class="faq-item"><h3>Can it cancel subscriptions for me automatically?</h3><p>Not yet — that needs a direct integration with each service, which is on the roadmap. Today it gives you the exact link to cancel in one click.</p></div>
+  </div>
+</div></section>
+
+<footer>Subscription X-Ray · Built to find money you forgot you were spending.</footer>
+
+<script>
+  // Once the backend below is deployed, set this to its real URL
+  // (e.g. https://subx-backend.up.railway.app) to make this live.
+  const BACKEND_URL = null;
+
+  if (BACKEND_URL) {
+    const params = new URLSearchParams(location.search);
+    const email = params.get('email'); // Razorpay redirects back with this after checkout
+    if (email) {
+      fetch(`${BACKEND_URL}/status?email=${encodeURIComponent(email)}`)
+        .then(r => r.json())
+        .then(data => {
+          const el = document.getElementById('pro-status');
+          el.classList.add('show');
+          el.textContent = data.pro
+            ? `Pro is active — thanks! Renews ${new Date(data.expiresAt).toLocaleDateString('en-IN')}.`
+            : `No active Pro plan found for ${email} yet.`;
+        })
+        .catch(() => {});
+    }
+  }
+</script>
+</body>
+</html>
